@@ -10,6 +10,14 @@ struct Cycler {
   const float phaseOffset;
   const float millis2radians;
 
+  // I keep track of cycle start, otherwise the timing will
+  // become erratic due to floating-point round off.
+  // A cycle length in milliseconds is more than accurate enough
+  // for what we want to do.
+  
+  const uint32_t cycleLength;
+  uint32_t cycleStart;
+
   Cycler(
     int N,
     const byte pin[],
@@ -22,11 +30,13 @@ struct Cycler {
     MAX_BRIGHTNESS(MAX_BRIGHTNESS),
     SPEED_Hz(SPEED_Hz),
     phaseOffset(2 * PI / N),
-    millis2radians(2 * PI / 1000.0 * SPEED_Hz)
+    millis2radians(2 * PI / 1000.0 * SPEED_Hz),
+    cycleLength(1000.0 / (float)SPEED_Hz)
   {
   }
 
   void setup() {
+    cycleStart = millis();
     for (int i = 0; i < N; i++) {
       pinMode(pin[i], OUTPUT);
     }
@@ -34,7 +44,13 @@ struct Cycler {
 
 
   void loop() {
-    float rad = millis() * millis2radians;
+    uint32_t ms = millis() - cycleStart;
+    while (ms > cycleLength) {
+      ms -= cycleLength;
+      cycleStart += cycleLength;
+    }
+
+    float rad = ms * millis2radians;
     for (int i = 0; i < N; i++) {
       float s = sin(rad + i * phaseOffset);
       s = (s + 1) / 2;
@@ -92,7 +108,7 @@ Cycler bussard(
   sizeof(bussardPins) / sizeof(*bussardPins),
   bussardPins,
   64, 196, // brightness range
-  2.0 // speed of 2Hz.
+  2 // speed of 2Hz.
 );
 
 
