@@ -45,12 +45,42 @@ struct Cycler {
 };
 
 struct Flasher {
-  void setup() {
+
+  const byte pin;
+  const uint32_t ON_TIME_MS;
+  const uint32_t OFF_TIME_MS;
+  uint32_t startMS;
+  boolean on;
+
+  Flasher(const byte pin,
+          const uint32_t ON_TIME_MS,
+          const uint32_t OFF_TIME_MS):
+    pin(pin),
+    ON_TIME_MS(ON_TIME_MS),
+    OFF_TIME_MS(OFF_TIME_MS)
+  {
   }
 
+  void setup() {
+    pinMode(pin, OUTPUT);
+
+    startMS = millis();
+    digitalWrite(pin, HIGH);
+    on = true;
+  }
 
   void loop() {
-
+    uint32_t tt = millis() - startMS;
+    if (on && tt > ON_TIME_MS) {
+      startMS = millis();
+      on = false;
+      digitalWrite(pin, LOW);
+    }
+    else if (!on && tt > OFF_TIME_MS) {
+      startMS = millis();
+      on = true;
+      digitalWrite(pin, HIGH);
+    }
   }
 };
 
@@ -61,17 +91,32 @@ const byte bussardPins[] = {3, 5, 6, 9, 10};
 Cycler bussard(
   sizeof(bussardPins) / sizeof(*bussardPins),
   bussardPins,
-  0, 255, // brightness range
+  64, 196, // brightness range
   2.0 // speed of 2Hz.
 );
 
+
+Flasher flasher[] = {
+  Flasher(7, 200, 800), // pin 7, on for 200, off for 800
+  Flasher(8, 1000, 1000) // pin 8, 2 seconds 50/50 cycle
+};
+
+const int FLASHERS = sizeof(flasher) / sizeof(*flasher);
+
+
 void setup() {
   bussard.setup();
+  for (int i = 0; i < FLASHERS; i++) {
+    flasher[i].setup();
+  }
 }
 
 
 void loop() {
   bussard.loop();
+  for (int i = 0; i < FLASHERS; i++) {
+    flasher[i].loop();
+  }
 }
 
 
