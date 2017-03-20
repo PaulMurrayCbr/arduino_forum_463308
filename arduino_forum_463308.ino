@@ -1,8 +1,5 @@
 
-
-// five LEDs for the bussard collectors
-const int BUSSARD_CT = 5;
-const byte bussardPin[] = {A0, A1, A2, A3, A4};
+// Sketch for tagamo at the arduino forums, http://forum.arduino.cc/index.php?topic=463308
 
 struct Cycler {
   const int N;
